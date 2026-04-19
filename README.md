@@ -112,9 +112,17 @@ If you don't want to use docker you can install all dependencies manually.
 ## **Dependencies**
 
 *   Ubuntu 20.04 LTS (Focal Fossa) [download](https://releases.ubuntu.com/20.04)
-*   ROS2 Foxy Fitzroy
-*   Gazebo 11 (Classic)
-*   PyTorch 1.10.0 (CUDA 11.3 build)
+*   ROS2 Foxy Fitzroy (`ros-foxy-ros-base`)
+*   Gazebo 11 Classic (`ros-foxy-gazebo-ros-pkgs`)
+*   Python 3.8.x (Dockerfile installs Python 3.8)
+*   PyTorch stack (exact tested versions):
+  * `numpy==1.24.3`
+  * `matplotlib==3.7.1`
+  * `pandas==2.0.2`
+  * `pyqtgraph==0.12.4`
+  * `PyQt5==5.14.1`
+  * `torch==1.10.0+cu113`
+*   CUDA runtime baseline used by Docker image: `11.3.1` (`nvidia/cuda:11.3.1-base-ubuntu20.04`)
 
 
 ## **Installing ROS2**
@@ -130,10 +138,8 @@ More detailed installation instructions can be found [here](https://automaticadd
 
 ## **Installing Gazebo**
 
-For this project we will be using Gazebo **11.0.** To install Gazebo 11.0, navigate to the following [page](http://gazebosim.org/tutorials?tut=install_ubuntu), select Version 11.0 in the top-right corner and follow the default installation instructions.
+For this project we use Gazebo 11 Classic on Ubuntu 20.04. Install ROS2 Foxy Gazebo integration with:
 
-Next, we need to install a package that allows ROS2 to interface with Gazebo.
-To install this package we simply execute the following command in a terminal:
 ```
 sudo apt install ros-foxy-gazebo-ros-pkgs
 ```
@@ -159,33 +165,32 @@ If something does not work, carefully check whether you executed all the command
 
 ## **Installing Python3, Pytorch**
 
-If you are using Ubuntu 20.04 as specified, Python should already be preinstalled. The last tested version for this project was Python 3.8.10
+If you are using Ubuntu 20.04, install Python and pip explicitly to match this project setup:
 
-Install pip3 (python package manager for python 3) as follows:
 ```
-sudo apt install python3-pip
+sudo apt install python3.8 python3-pip
 ```
 
-To install the exact versions used in this repository, run:
+Install pinned Python packages as follows:
 ```
 pip3 install numpy==1.24.3 matplotlib==3.7.1 pandas==2.0.2 pyqtgraph==0.12.4 PyQt5==5.14.1 torch==1.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 ```
 
 `pyqtgraph` and `PyQt` are optional and only necessary if you want to visualize the neural network activity. `pandas` is only required for generating graphs outside of training.
 
-**Note: The version of CUDA support to install will depend on the [compute capability](https://developer.nvidia.com/cuda-gpus) of your GPU**
+**Note: The PyTorch build above targets CUDA 11.3 (`cu113`). Verify your GPU compatibility via [NVIDIA CUDA GPUs](https://developer.nvidia.com/cuda-gpus).**
 
 ## **Enabling GPU support (recommended)**
 
-We can significantly speed up the training procedure by making use of a GPU. If no GPU is available or it is not initialized correctly the training will automatically be redirected to the CPU. Since most users have access to an NVIDIA GPU we will explain how to enable this to work with PyTorch on linux.
+We can significantly speed up the training procedure by making use of a GPU. If no GPU is available or it is not initialized correctly the training will automatically be redirected to the CPU.
 Three different components are required to train on GPU:
 - NVIDIA drivers for linux
-- The CUDA library for linux
-- cuDNN (comes with pytorch and should be installed automatically)
+- CUDA 11.3 runtime/toolkit compatibility
+- cuDNN (comes with PyTorch and should be installed automatically)
 
-Press the windows/command key and type "Additional drivers" to make the corresponding linux menu come up. Here, multiple radio button options should be listed for installing different nvidia drivers. Install the option with the latest version (highest number, e.g. currently nvidia-driver-510).
+Install an NVIDIA driver version compatible with CUDA 11.3 and your GPU.
 
-The next step is to download the correct CUDA version. This will depend on your NVIDIA drivers and GPU variant. Generally, all you have to do is execute:
+Install the CUDA toolkit/runtime:
 ```
 sudo apt install nvidia-cuda-toolkit
 ```
@@ -214,12 +219,12 @@ sudo apt-get install ros-foxy-turtlebot3-description
 
 Open a terminal in the desired location for the new workspace. Clone the repository using:
 ```
-git clone https://github.com/tomasvr/turtlebot3_drlnav.git
+git clone https://github.com/Amit-IITMANDI-ml/turtlebot-td3.git
 ```
 
 `cd` into the directory and make sure you are on the main branch
 ```
-cd turtlebot3_drlnav
+cd turtlebot-td3
 git checkout main
 ```
 
