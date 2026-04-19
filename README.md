@@ -3,7 +3,6 @@
 ### A ROS2 framework for DRL autonomous navigation on mobile robots with LiDAR.
 <p float="left">
  <img src="media/simulation.gif" width="400">
- <img src="media/physical_demo.gif" width="216" alt="physical_demo.gif" />
 </p>
 
 
@@ -16,17 +15,15 @@
   * [Loading a Stored Model](#loading-a-stored-model)
   * [Optional Configuration](#optional-configuration)
   * [Utilities](#utilities)
-* [Physical Robot](#physical-robot)
 * [Troubleshooting](#troubleshooting)
 
 # **Introduction**
 
-This repository contains a ROS2 and PyTorch framework for developing and experimenting with deep reinforcement learning for autonomous navigation on mobile robots. Models are trained in simulation and evaluated either in simulation or on a real-world robot. The robot model used in this repository is based on the turtlebot3. However, the framework can be used for any robot model that can provide LiDAR and odometry information and work with linear velocity messages.
+This repository contains a ROS2 and PyTorch framework for developing and experimenting with deep reinforcement learning for autonomous navigation on mobile robots. Models are trained and evaluated in simulation. The robot model used in this repository is based on the turtlebot3. However, the framework can be used for any robot model that can provide LiDAR and odometry information and work with linear velocity messages.
 
 Below are a few examples of what the current framework can be used for:
 
 * Train, store, load, and evaluate a navigation agent in simulation in different environments
-* Deploy an existing model on a real robot to perform navigation and obstacle avoidance
 * Evaluate the effect of different hyperparameters on training time and performance
 * Experiment with additional capabilities (backward motion, frame stacking)
 * Implement your own DRL algorithm (currently includes: DQN, DDPG, TD3)
@@ -74,7 +71,7 @@ sudo systemctl restart docker
 
 At this point, a working setup can be tested by running a base CUDA container:
 ```
-sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.6.2-base-ubuntu20.04 nvidia-smi
+sudo docker run --rm --runtime=nvidia --gpus all nvidia/cuda:11.3.1-base-ubuntu20.04 nvidia-smi
 ```
 ## **Build and run container**
 
@@ -116,8 +113,8 @@ If you don't want to use docker you can install all dependencies manually.
 
 *   Ubuntu 20.04 LTS (Focal Fossa) [download](https://releases.ubuntu.com/20.04)
 *   ROS2 Foxy Fitzroy
-*   Gazebo (Version 11.0)
-*   PyTorch (Version: 1.10.0)
+*   Gazebo 11 (Classic)
+*   PyTorch 1.10.0 (CUDA 11.3 build)
 
 
 ## **Installing ROS2**
@@ -169,9 +166,9 @@ Install pip3 (python package manager for python 3) as follows:
 sudo apt install python3-pip
 ```
 
-To install the tested version of PyTorch (1.10.0) with CUDA support (11.3) and packages for generating graphs, run:
+To install the exact versions used in this repository, run:
 ```
-pip3 install matplotlib pandas pyqtgraph==0.12.4 PyQt5==5.14.1 torch==1.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+pip3 install numpy==1.24.3 matplotlib==3.7.1 pandas==2.0.2 pyqtgraph==0.12.4 PyQt5==5.14.1 torch==1.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 ```
 
 `pyqtgraph` and `PyQt` are optional and only necessary if you want to visualize the neural network activity. `pandas` is only required for generating graphs outside of training.
@@ -453,7 +450,7 @@ The script will loop through all of your models and select the models to keep li
 
 ### Visualization
 
-<img src="media/visual.gif" width="900">
+<img src="src/turtlebot3_drl/model/examples/td3_0_stage9/_figure.png" width="900">
 
 To enable a complete visualization of the neural network neuron activity and biases simply set `ENABLE_VISUAL` to `True` in `settings.py`. This requires the python3 packages `pyqtgraph` and `PyQt5` to be installed.
 The visual should mainly be used during evaluation as it can slow down training significantly.
@@ -474,60 +471,6 @@ The visual should mainly be used during evaluation as it can slow down training 
 * `algorithm`: algorithm to run, one of either: `dqn`, `ddpg`, `td3`
 * `modelpath`: path to model to be loaded for testing
 * `loadepisode`: is the episode to load from `modelpath`
-
-# Physical Robot
-
-The models trained using this framework were validated on a low-cost physical system. Video demonstrations can be found on my [YouTube channel](https://www.youtube.com/@tomasvr1/videos).
-
-![Physical Robot](media/physical_robot.png?raw=true)
-
-The are three main requirements for a robot to be compatible with this project:
-* The robot needs to provide LiDAR scan information
-* The robot needs to provide any kind of odometry information (e.g. tachometers, SLAM, AMCL or GPS)
-* The robot needs to be able to work with linear and angular velocity messages
-
-To run one of your models (trained in simulation) on a physical robot follow these steps:
-* In settings.py, adjust the REAL ROBOT ENVIRONMENT SETTINGS
-  * **REAL_TOPIC**: Set the right ROS topics for your laser scan, odometry and velocity inputs/outputs
-  * **REAL_N_SCAN_SAMPLES**: Configure the number of Lidar samples your robot will provide
-  * **REAL_LIDAR_CORRECTION**: Depending on the dimensions of your robot the LiDAR values might need to be corrected to avoid the agent from detecting a 'collision' when the robot has not yet actually collided with any obstacle. This value is simply subtracted from the real LiDAR readings and finding the right value requires some trial and error.
-  * Set the remaining options such as the arena dimensions, max velocities, max LiDAR distance, and goal and collision thresholds.
-
-Next, when using a physical robot we do not need to run the gazebo simulation node or the gazebo_goals node. We will however still need to run an environment node and an agent node.
-
-At this point, turn on the robot and initialize all of its components. Ensure that:
-* LiDAR scan ROS messages are being sent over the configured TOPIC_SCAN topic
-* Odometry ROS messages are being sent over the TOPIC_ODOM topic
-* The robot is listening for velocity ROS messages on the TOPIC_VELO topic.
-
-**Note:** If you are running nodes on multiple machines (e.g. one laptop and one robot) ensure that all machines have the same value set for `ROS_DOMAIN_ID` in `~/.bashrc`:
-
-`export ROS_DOMAIN_ID=[X]` (X can be any number as long as it is the same for each machine).
-
-Also ensure that all machines are connected to the same Local Area Network (LAN).
-
-Now, open a terminal on your laptop (or robot) and run the environment node for a real robot:
-```
-ros2 run turtlebot3_drl real_environment
-```
-
-Then, open another terminal and run the agent node for a real robot (substitute your model name and desired episode to load):
-```
-ros2 run turtlebot3_drl real_agent [ALGORITHM_NAME] [MODEL_NAME] [MODEL_EPISODE]
-```
-For example:
-```
-ros2 run turtlebot3_drl real_agent ddpg ddpg_1_stage4 1000
-```
-
-If everything loads correctly, you can now use the included script to generate a goal at location (x=1, y=1):
-```
-./spawn_goal 1 1
-```
-
-**And that's it!** You should now see the robot start moving toward the goal while avoiding obstacles.
-
-**Note:** You can use RViz2 in order to visualize the LiDAR scans for debugging and fine-tuning the REAL_LIDAR_CORRECTION value: simply add a `laser_scan` display type and set its topic to `TOPIC_SCAN`.
 
 # **Troubleshooting**
 
